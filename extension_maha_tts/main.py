@@ -1,9 +1,10 @@
 import glob
 import os
+from gradio_iconbutton import IconButton
 import torch
 import gradio as gr
 from importlib.metadata import version
-from tts_webui.utils.gr_reload_button import gr_open_button_simple, gr_reload_button
+from tts_webui.utils.OpenFolderButton import OpenFolderButton
 from tts_webui.utils.list_dir_models import unload_model_button
 from tts_webui.utils.randomize_seed import randomize_seed_ui
 from tts_webui.utils.manage_model_state import manage_model_state
@@ -160,8 +161,8 @@ def ui():
                 show_label=False,
                 container=False,
             )
-            gr_open_button_simple("voices-tortoise", api_name="maha_tts_open_voices")
-            gr_reload_button().click(
+            OpenFolderButton("voices-tortoise", api_name="maha_tts_open_voices")
+            IconButton("refresh").click(
                 fn=lambda: gr.Dropdown(choices=get_voice_list()),  # type: ignore
                 outputs=[speaker_name],
                 api_name="maha_tts_refresh_voices",
@@ -207,7 +208,6 @@ def extension__tts_generation_webui():
     return {
         "package_name": "extension_maha_tts",
         "name": "Maha TTS",
-        "version": "0.0.1",
         "requirements": "git+https://github.com/rsxdalv/extension_maha_tts@main",
         "description": "Maha TTS allows generating speech from text using the MahaTTS model.",
         "extension_type": "interface",
