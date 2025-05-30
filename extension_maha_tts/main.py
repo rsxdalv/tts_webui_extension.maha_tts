@@ -82,26 +82,25 @@ def generate_audio_maha_tts(
     return {"audio_out": (sr, audio)}
 
 
-def ui():
-    # from maha_tts.config import config
-    class config:
-        langs = [
-            "english",
-            "tamil",
-            "telugu",
-            "punjabi",
-            "marathi",
-            "hindi",
-            "gujarati",
-            "bengali",
-            "assamese",
-        ]
+# from maha_tts.config import config
+class config:
+    langs = [
+        "english",
+        "tamil",
+        "telugu",
+        "punjabi",
+        "marathi",
+        "hindi",
+        "gujarati",
+        "bengali",
+        "assamese",
+    ]
 
+
+def ui():
+    gr.Markdown(f"# Maha TTS v{MAHA_VERSION}")
     gr.Markdown(
         """
-    # Maha TTS Demo
-    To use it, simply enter your text, and click "Generate".
-    The model will generate speech from the text.
     It uses the [MahaTTS](https://huggingface.co/Dubverse/MahaTTS) model from HuggingFace.
 
     To make a voice, create a folder with the name of the voice in the `voices-tortoise` folder.
@@ -112,95 +111,100 @@ def ui():
     The reference voices can be downloaded [here](https://huggingface.co/Dubverse/MahaTTS/resolve/main/maha_tts/pretrained_models/infer_ref_wavs.zip).
     """
     )
-    gr.Markdown(f"MahaTTS version: {MAHA_VERSION}")
-    text = gr.Textbox(lines=2, label="Input Text")
     with gr.Row():
-        model_name = gr.Radio(
-            choices=[
-                ("English", "Smolie-en"),
-                ("Indian", "Smolie-in"),
-            ],
-            label="Model Language",
-            value="Smolie-in",
-            type="value",
-        )
-        device = gr.Radio(
-            choices=["auto", "cuda", "cpu"],
-            label="Device",
-            value="auto",
-            type="value",
-        )
-    text_language = gr.Radio(
-        choices=list(config.langs),
-        label="Text Language",
-        value="english",
-        type="value",
-    )
-    model_name.change(
-        fn=lambda choice: choice == "Smolie-en"
-        and gr.Radio(
+        maha_tts_ui()
+
+def maha_tts_ui():
+    with gr.Column():
+        text = gr.Textbox(lines=2, label="Input Text")
+        button = gr.Button("Generate", variant="primary")
+        with gr.Column():
+            gr.Markdown("Speaker Name")
+            with gr.Row():
+                voices = get_voice_list()
+                speaker_name = gr.Dropdown(
+                    choices=voices,  # type: ignore
+                    type="value",
+                    show_label=False,
+                    container=False,
+                )
+                OpenFolderButton("voices-tortoise", api_name="maha_tts_open_voices")
+                IconButton("refresh").click(
+                    fn=lambda: gr.Dropdown(choices=get_voice_list()),  # type: ignore
+                    outputs=[speaker_name],
+                    api_name="maha_tts_refresh_voices",
+                )
+            gr.Markdown("Note: The speaker audio must be mono at this time.")
+
+        with gr.Row():
+            model_name = gr.Radio(
+                choices=[
+                    ("English", "Smolie-en"),
+                    ("Indian", "Smolie-in"),
+                ],
+                label="Model Language",
+                value="Smolie-in",
+                type="value",
+            )
+            device = gr.Radio(
+                choices=["auto", "cuda", "cpu"],
+                label="Device",
+                value="auto",
+                type="value",
+            )
+        text_language = gr.Radio(
+            choices=list(config.langs),
+            label="Text Language",
             value="english",
-            visible=False,
-            interactive=False,
+            type="value",
         )
-        or gr.Radio(
-            interactive=True,
-            visible=True,
-        ),
-        inputs=[model_name],
-        outputs=[text_language],
-    )
+        model_name.change(
+            fn=lambda choice: choice == "Smolie-en"
+            and gr.Radio(
+                value="english",
+                visible=False,
+                interactive=False,
+            )
+            or gr.Radio(
+                interactive=True,
+                visible=True,
+            ),
+            inputs=[model_name],
+            outputs=[text_language],
+        )
+
+        seed, randomize_seed_callback = randomize_seed_ui()
+
+        unload_model_button("maha_tts")
 
     with gr.Column():
-        gr.Markdown("Speaker Name")
-        with gr.Row():
-            voices = get_voice_list()
-            speaker_name = gr.Dropdown(
-                choices=voices,  # type: ignore
-                type="value",
-                show_label=False,
-                container=False,
-            )
-            OpenFolderButton("voices-tortoise", api_name="maha_tts_open_voices")
-            IconButton("refresh").click(
-                fn=lambda: gr.Dropdown(choices=get_voice_list()),  # type: ignore
-                outputs=[speaker_name],
-                api_name="maha_tts_refresh_voices",
-            )
-        gr.Markdown("Note: The speaker audio must be mono at this time.")
+        audio_out = gr.Audio(label="Output Audio")
 
-    seed, randomize_seed_callback = randomize_seed_ui()
+        input_dict = {
+            text: "text",
+            model_name: "model_name",
+            text_language: "text_language",
+            speaker_name: "speaker_name",
+            seed: "seed",
+            device: "device",
+        }
 
-    unload_model_button("maha_tts")
+        output_dict = {
+            "audio_out": audio_out,
+            "metadata": gr.JSON(label="Metadata", visible=False),
+            "folder_root": gr.Textbox(label="Folder root", visible=False),
+        }
 
-    audio_out = gr.Audio(label="Output Audio")
-    button = gr.Button("Generate")
-
-    input_dict = {
-        text: "text",
-        model_name: "model_name",
-        text_language: "text_language",
-        speaker_name: "speaker_name",
-        seed: "seed",
-        device: "device",
-    }
-
-    output_dict = {
-        "audio_out": audio_out,
-        "metadata": gr.JSON(label="Metadata", visible=False),
-        "folder_root": gr.Textbox(label="Folder root", visible=False),
-    }
-
-    button.click(
-        **randomize_seed_callback,
-    ).then(
-        **dictionarize(
-            fn=generate_audio_maha_tts,
-            inputs=input_dict,
-            outputs=output_dict,
-        ),
-        api_name="maha_tts",
-    )
+        button.click(
+            **randomize_seed_callback,
+        ).then(
+            **dictionarize(
+                fn=generate_audio_maha_tts,
+                inputs=input_dict,
+                outputs=output_dict,
+            ),
+            api_name="maha_tts",
+        )
 
 
 def extension__tts_generation_webui():
@@ -222,10 +226,6 @@ def extension__tts_generation_webui():
 
 
 if __name__ == "__main__":
-    if "demo" in locals():
-        locals()["demo"].close()
     with gr.Blocks() as demo:
         ui()
-    demo.launch(
-        server_port=7771,
-    )
+    demo.launch()
