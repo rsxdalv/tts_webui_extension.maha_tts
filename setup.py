@@ -1,12 +1,12 @@
 import setuptools
 
 setuptools.setup(
-    name="extension_maha_tts",
+    name="tts_webui_extension.maha_tts",
     packages=setuptools.find_namespace_packages(),
     version="0.1.0",
     author="rsxdalv",
     description="Maha TTS allows generating speech from text using the MahaTTS model.",
-    url="https://github.com/rsxdalv/extension_maha_tts",
+    url="https://github.com/rsxdalv/tts_webui_extension.maha_tts",
     project_urls={},
     scripts=[],
     install_requires=[
@@ -18,3 +18,4 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
 )
+
