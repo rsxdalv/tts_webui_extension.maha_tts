@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tts_webui_extension.maha_tts"
+version = "0.1.0"
+description = "Maha TTS allows generating speech from text using the MahaTTS model."
+authors = [
+    {name = "rsxdalv"}
+]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "maha-tts @ https://github.com/rsxdalv/MahaTTS/releases/download/v1.0.0/maha_tts-1.0.0-py3-none-any.whl",
+]
+
+[project.urls]
+Homepage = "https://github.com/rsxdalv/tts_webui_extension.maha_tts"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+# This will find all namespace packages automatically
+namespaces = true
