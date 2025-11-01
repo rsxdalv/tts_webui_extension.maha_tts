@@ -1,5 +1,3 @@
-import glob
-import os
 from gradio_iconbutton import IconButton
 import torch
 import gradio as gr
@@ -7,32 +5,12 @@ from importlib.metadata import version
 from tts_webui.utils.OpenFolderButton import OpenFolderButton
 from tts_webui.utils.list_dir_models import unload_model_button
 from tts_webui.utils.randomize_seed import randomize_seed_ui
-from tts_webui.utils.manage_model_state import manage_model_state
+from .api import tts, VOICES_DIR, get_voices
 from tts_webui.decorators import *
 from tts_webui.extensions_loader.decorator_extensions import (
     decorator_extension_inner,
     decorator_extension_outer,
 )
-
-VOICES_DIR = "voices/maha-tts"
-
-
-def get_ref_clips(speaker_name):
-    return glob.glob(os.path.join("./", VOICES_DIR, speaker_name, "*.wav"))
-
-
-def get_voice_list():
-    files = os.listdir(os.path.join("./", VOICES_DIR))
-    dirs = [f for f in files if os.path.isdir(os.path.join("./", VOICES_DIR, f))]
-    return dirs
-
-
-@manage_model_state("maha_tts")
-def preload_models_if_needed(model_name, device):
-    from maha_tts.inference import load_models
-
-    return load_models(name=model_name, device=device)
-
 
 @decorator_extension_outer
 @decorator_apply_torch_seed
@@ -52,23 +30,7 @@ def generate_audio_maha_tts(
     device="auto",
     **kwargs,
 ):
-    from maha_tts.inference import infer_tts, config
-
-    device = torch.device(
-        device == "auto" and "cuda" if torch.cuda.is_available() else "cpu" or device
-    )
-    diff_model, ts_model, vocoder, diffuser = preload_models_if_needed(
-        model_name=model_name, device=device
-    )
-
-    ref_clips = get_ref_clips(speaker_name)
-    text_language = (
-        torch.tensor(config.lang_index[text_language]).to(device).unsqueeze(0)
-    )
-    audio, sr = infer_tts(
-        text, ref_clips, diffuser, diff_model, ts_model, vocoder, text_language
-    )
-    return {"audio_out": (sr, audio)}
+    return tts(text, model_name, text_language, speaker_name, device, **kwargs)
 
 
 # from maha_tts.config import config
@@ -87,7 +49,7 @@ class config:
 
 
 def ui():
-    gr.Markdown(f"# Maha TTS v{version("maha_tts")}")
+    gr.Markdown(f"# Maha TTS v{version('maha_tts')}")
     gr.Markdown(
         f"""
     It uses the [MahaTTS](https://huggingface.co/Dubverse/MahaTTS) model from HuggingFace.
@@ -110,7 +72,7 @@ def maha_tts_ui():
         with gr.Column():
             gr.Markdown("Speaker Name")
             with gr.Row():
-                voices = get_voice_list()
+                voices = [(v["value"], v["label"]) for v in get_voices()]
                 speaker_name = gr.Dropdown(
                     choices=voices,  # type: ignore
                     type="value",
@@ -119,7 +81,7 @@ def maha_tts_ui():
                 )
                 OpenFolderButton(VOICES_DIR, api_name="maha_tts_open_voices")
                 IconButton("refresh").click(
-                    fn=lambda: gr.Dropdown(choices=get_voice_list()),  # type: ignore
+                    fn=lambda: gr.Dropdown(choices=[(v["value"], v["label"]) for v in get_voices()]),  # type: ignore
                     outputs=[speaker_name],
                     api_name="maha_tts_refresh_voices",
                 )
