@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tts_webui_extension.maha_tts"
-version = "0.1.0"
+version = "0.2.0"
 description = "Maha TTS allows generating speech from text using the MahaTTS model."
 authors = [
     {name = "rsxdalv"}

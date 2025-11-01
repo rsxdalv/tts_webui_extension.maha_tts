@@ -8,33 +8,22 @@ from tts_webui.utils.OpenFolderButton import OpenFolderButton
 from tts_webui.utils.list_dir_models import unload_model_button
 from tts_webui.utils.randomize_seed import randomize_seed_ui
 from tts_webui.utils.manage_model_state import manage_model_state
-from tts_webui.decorators.gradio_dict_decorator import dictionarize
-from tts_webui.decorators.decorator_apply_torch_seed import decorator_apply_torch_seed
-from tts_webui.decorators.decorator_log_generation import decorator_log_generation
-from tts_webui.decorators.decorator_save_metadata import decorator_save_metadata
-from tts_webui.decorators.decorator_save_wav import decorator_save_wav
-from tts_webui.decorators.decorator_add_base_filename import decorator_add_base_filename
-from tts_webui.decorators.decorator_add_date import decorator_add_date
-from tts_webui.decorators.decorator_add_model_type import decorator_add_model_type
-from tts_webui.decorators.log_function_time import log_function_time
+from tts_webui.decorators import *
 from tts_webui.extensions_loader.decorator_extensions import (
-    decorator_extension_outer,
     decorator_extension_inner,
+    decorator_extension_outer,
 )
 
-try:
-    MAHA_VERSION = version("maha_tts")
-except:
-    MAHA_VERSION = "Not installed"
+VOICES_DIR = "voices/maha-tts"
 
 
 def get_ref_clips(speaker_name):
-    return glob.glob(os.path.join("./voices-tortoise/", speaker_name, "*.wav"))
+    return glob.glob(os.path.join("./", VOICES_DIR, speaker_name, "*.wav"))
 
 
 def get_voice_list():
-    files = os.listdir("./voices-tortoise/")
-    dirs = [f for f in files if os.path.isdir(os.path.join("./voices-tortoise/", f))]
+    files = os.listdir(os.path.join("./", VOICES_DIR))
+    dirs = [f for f in files if os.path.isdir(os.path.join("./", VOICES_DIR, f))]
     return dirs
 
 
@@ -98,12 +87,12 @@ class config:
 
 
 def ui():
-    gr.Markdown(f"# Maha TTS v{MAHA_VERSION}")
+    gr.Markdown(f"# Maha TTS v{version("maha_tts")}")
     gr.Markdown(
-        """
+        f"""
     It uses the [MahaTTS](https://huggingface.co/Dubverse/MahaTTS) model from HuggingFace.
 
-    To make a voice, create a folder with the name of the voice in the `voices-tortoise` folder.
+    To make a voice, create a folder with the name of the voice in the `{VOICES_DIR}` folder.
     Then, add the voice's wav files to the folder.
 
     A voice must be used. Some voices give errors.
@@ -128,7 +117,7 @@ def maha_tts_ui():
                     show_label=False,
                     container=False,
                 )
-                OpenFolderButton("voices-tortoise", api_name="maha_tts_open_voices")
+                OpenFolderButton(VOICES_DIR, api_name="maha_tts_open_voices")
                 IconButton("refresh").click(
                     fn=lambda: gr.Dropdown(choices=get_voice_list()),  # type: ignore
                     outputs=[speaker_name],
