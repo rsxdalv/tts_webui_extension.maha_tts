@@ -160,6 +160,9 @@ def maha_tts_ui():
 
 def extension__tts_generation_webui():
     ui()
+    from .openai_api_adapter import register
+
+    register()
     return {
         "package_name": "extension_maha_tts",
         "name": "Maha TTS",
