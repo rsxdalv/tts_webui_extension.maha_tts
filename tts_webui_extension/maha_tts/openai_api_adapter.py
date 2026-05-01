@@ -1,11 +1,21 @@
 import os
 
 
+def _get_maha_tts_voices() -> list[dict]:
+    try:
+        from .api import get_voices
+
+        return get_voices()
+    except ImportError:
+        print("Maha TTS extension not available")
+        return []
+
+
 def _make_tts_fn():
     def tts_fn(
         model: str, text: str, voice: str | None, speed: float | None, params: dict
     ) -> dict:
-        from tts_webui_extension.maha_tts.api import tts
+        from .api import tts
 
         return tts(
             text=text,
@@ -42,6 +52,6 @@ def register_unsafe_outprocess():
 
     setup_oai_server(
         tts_fn=_make_tts_fn(),
-        get_voices_fn=lambda model: [],
+        get_voices_fn=_get_maha_tts_voices,
         model="maha_tts",
     )
